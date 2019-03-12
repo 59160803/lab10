@@ -1,0 +1,41 @@
+---
+- hosts: db
+  become: yes
+  become_user: root
+  tasks:
+  
+  - name: Install maria db
+    yum:
+      name: mariadb-server
+      state: latest
+
+  - name: Enable service maria db
+    service:
+      name: mariadb
+      enabled: yes
+
+  - name: Start service maria db
+    service:
+      name: mariadb
+      state: started
+
+  - name: Enable service firewall
+    service:
+      name: firewalld
+      enabled: yes
+  
+  - name: Start firewall
+    service:
+      name: firewalld
+      state: started
+
+  - name: Open firewall
+    firewalld:
+      port: '3306/tcp'
+      permanent: yes
+      state: enabled
+
+  - name: Restart firewalld
+    service:
+      name: firewalld
+      state: restarted
