@@ -1,0 +1,57 @@
+---
+- hosts: lb
+  become: yes
+  become_user: root
+  tasks:
+  
+  - name: Install nginx
+    yum:
+      name: nginx
+      state: latest
+
+  - name: copy conf
+    template:
+      src: '{{item.src}}'
+      dest: '{{item.dest}}'
+    loop:
+    - { src: 'template/mynet-803.conf.j2', dest: '/etc/nginx/conf.d/mynet-803.conf'}
+    - { src: 'template/my-site.conf.j2', dest: '/etc/nginx/conf.d/my-site.conf'}
+
+  - name: Enable nginx
+    service:
+      name: nginx
+      enabled: yes
+
+  - name: Statrt nginx
+    service:
+      name: nginx
+      state: started 
+
+  - name: Install firewall
+    yum:
+      name: firewalld
+      state: latest
+
+  - name: Enable service firewall
+    service:
+      name: firewalld
+      enabled: yes
+  
+  - name: Start firewall
+    service:
+      name: firewalld
+      state: started
+
+  - name: Open firewall
+    firewalld:
+      port: '{{ item }}'
+      permanent: yes
+      state: enabled
+    loop:
+    - "80/tcp"
+    - "443/tcp"
+
+  - name: Restart firewalld
+    service:
+      name: firewalld
+      state: restarted

@@ -1,0 +1,111 @@
+---
+- hosts: db
+  become: yes
+  become_user: root
+  tasks:
+  
+  - name: Install maria db
+    yum:
+      name: mariadb-server
+      state: latest
+
+  - name: Enable service maria db
+    service:
+      name: mariadb
+      enabled: yes
+
+  - name: Start service maria db
+    service:
+      name: mariadb
+      state: started
+
+  - name: Install nfs
+    yum:
+      name: nfs-utils
+      state: latest
+
+  - name: Create nfs
+    file:
+      path: /var/nfs
+      state: directory
+      owner: nfsnobody
+      group: nfsnobody
+      mode: "0755"
+
+  - name: Create site
+    file:
+      path: /var/nfs/{{ item  }}
+      state: directory
+      mode: "0755"
+    loop:
+      - my-site.com/html
+      - my-site.com/log
+      - mynet-803.com/html
+      - mynet-803.com/log
+
+  - name: Config exports
+    lineinfile:
+      path: /etc/exports
+      line: '/var/nfs   *(rw,sync,no_root_squash,no_all_squash)'
+
+  - name: Enable service 
+    service:
+      name: "{{ item  }}"
+      enabled: yes
+    loop:
+      - rpcbind
+      - nfs-server
+      - nfs-lock
+      - nfs-idmap
+  
+  - name: Start service 
+    service:
+      name: "{{ item  }}"
+      state: started
+    loop:
+      - rpcbind
+      - nfs-server
+      - nfs-lock
+      - nfs-idmap
+
+
+  - name: Enable service firewall
+    service:
+      name: firewalld
+      enabled: yes
+  
+  - name: Start firewall
+    service:
+      name: firewalld
+      state: started
+
+  - name: Add service 
+    firewalld:
+      service: "{{ item  }}"
+      permanent: yes
+      state: enabled
+    loop:
+      - nfs
+      - mountd
+      - rpc-bind
+
+  - name: Open firewall
+    firewalld:
+      port: '3306/tcp'
+      permanent: yes
+      state: enabled
+
+  - name: Restart firewalld
+    service:
+      name: firewalld
+      state: restarted
+
+  - name: file mynet index.php
+    template:
+      src: 'template/index.php.j2'
+      dest: '/var/nfs/mynet-803.com/html/index.php'
+
+  - name: file my-site index.php
+    template:
+      src: 'template/index.php.j2'
+      dest: '/var/nfs/my-site.com/html/index.php'    

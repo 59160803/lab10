@@ -34,6 +34,16 @@
       state: latest
       enablerepo: remi-php73
 
+  - name: install nfs-utils
+    yum:
+      name: nfs-utils
+      state: latest
+
+  - name: Started nfs
+    service:
+      name: nfs-utils
+      state: started
+
   - name: Edit Timezone
     lineinfile:
       path: /etc/php.ini
@@ -46,69 +56,62 @@
       src: 'template/enableserver.conf.j2'
       dest: '/etc/httpd/conf.d/enableserver.conf'
 
-  - name: Create directory wwwroot
+  - name: Create www
     file:
-      path: /var/www/{{ item }}
+      path: /var/nfs/www
       state: directory
-      mode: 0755
-    loop:
-      - my-site.com/html
-      - my-site.com/log
-      - mynet-803.com/html
-      - mynet-803.com/log
-
-  - name: change mode www
-    file:
-      path: /var/www
       mode: "0755"
+
+  - name: mount
+    command: mount 192.168.100.70:/var/nfs /var/nfs/www
 
   - name: create web 01 mynet-803.com.conf
     template:
       src: 'template/web-01.mynet-803.com.conf.j2'
       dest: '/etc/httpd/conf.d/web-01.mynet-803.com.conf'
-    when: ansible_ssh_host == '192.168.100.81'
+  #  when: ansible_ssh_host == '192.168.100.81'
 
   - name: create web 01 my-site.com.conf
     template:
       src: 'template/web-01.my-site.com.conf.j2'
       dest: '/etc/httpd/conf.d/web-01.my-site.com.conf'
-    when: ansible_ssh_host == '192.168.100.81'
+  #  when: ansible_ssh_host == '192.168.100.81'
 
-  - name: create web 02 mynet-803.com.conf
-    template:
-      src: 'template/web-02.mynet-803.com.conf.j2'
-      dest: '/etc/httpd/conf.d/web-02.mynet-803.com.conf'
-    when: ansible_ssh_host == '192.168.100.82'
+  #- name: create web 02 mynet-803.com.conf
+   # template:
+    #  src: 'template/web-02.mynet-803.com.conf.j2'
+     # dest: '/etc/httpd/conf.d/web-02.mynet-803.com.conf'
+    #when: ansible_ssh_host == '192.168.100.82'
 
-  - name: create web 02 my-site.com.conf
-    template:
-      src: 'template/web-02.my-site.com.conf.j2'
-      dest: '/etc/httpd/conf.d/web-02.my-site.com.conf'
-    when: ansible_ssh_host == '192.168.100.82'
+ # - name: create web 02 my-site.com.conf
+  #  template:
+   #   src: 'template/web-02.my-site.com.conf.j2'
+    #  dest: '/etc/httpd/conf.d/web-02.my-site.com.conf'
+    #when: ansible_ssh_host == '192.168.100.82'
 
-  - name: file web 01 index.php
-    template:
-      src: 'template/index1.php.j2'
-      dest: '/var/www/mynet-803.com/html/index.php'
-    when: ansible_ssh_host == '192.168.100.81' 
+  #- name: file web 01 index.php
+   # template:
+    #  src: 'template/index1.php.j2'
+     # dest: '/var/www/mynet-803.com/html/index.php'
+   # when: ansible_ssh_host == '192.168.100.81' 
     
-  - name: file web 01 index.php
-    template:
-      src: 'template/index2.php.j2'
-      dest: '/var/www/my-site.com/html/index.php'
-    when: ansible_ssh_host == '192.168.100.81'
+  #- name: file web 01 index.php
+  #  template:
+  #    src: 'template/index2.php.j2'
+   #   dest: '/var/www/my-site.com/html/index.php'
+    #when: ansible_ssh_host == '192.168.100.81'
 
-  - name: file web 02 index.php
-    template:
-      src: 'template/index3.php.j2'
-      dest: '/var/www/mynet-803.com/html/index.php'
-    when: ansible_ssh_host == '192.168.100.82' 
+ # - name: file web 02 index.php
+  #  template:
+   #   src: 'template/index3.php.j2'
+    #  dest: '/var/www/mynet-803.com/html/index.php'
+    #when: ansible_ssh_host == '192.168.100.82' 
     
-  - name: file web 02 index.php
-    template:
-      src: 'template/index4.php.j2'
-      dest: '/var/www/my-site.com/html/index.php'
-    when: ansible_ssh_host == '192.168.100.82'
+#  - name: file web 02 index.php
+ #   template:
+  #    src: 'template/index4.php.j2'
+   #   dest: '/var/www/my-site.com/html/index.php'
+    #when: ansible_ssh_host == '192.168.100.82'
 
   - name: Enable httpd
     service:
@@ -143,53 +146,4 @@
       name: firewalld
       state: restarted
 
-  - name: Copy index.php
-    template:
-      src: 'template/index.php.j2'
-      dest: '/var/www/html/index.php'
-      owner: root
-      group: root
-      mode: "775"
-
-- hosts: db
-  become: yes
-  become_user: root
-  tasks:
-  
-  - name: Install maria db
-    yum:
-      name: mariadb-server
-      state: latest
-
-  - name: Enable service maria db
-    service:
-      name: mariadb
-      enabled: yes
-
-  - name: Start service maria db
-    service:
-      name: mariadb
-      state: started
-
-  - name: Enable service firewall
-    service:
-      name: firewalld
-      enabled: yes
-  
-  - name: Start firewall
-    service:
-      name: firewalld
-      state: started
-
-  - name: Open firewall
-    firewalld:
-      port: '3306/tcp'
-      permanent: yes
-      state: enabled
-
-  - name: Restart firewalld
-    service:
-      name: firewalld
-      state: restarted
-   
-
+ 

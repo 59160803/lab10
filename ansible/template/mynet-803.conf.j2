@@ -1,0 +1,14 @@
+upstream mynet-803{
+ip_hash;
+ server 192.168.100.81;
+ server 192.168.100.82;
+}
+
+server {
+  listen 80;
+  server_name mynet-803.com www.mynet-803.com;
+  proxy_set_header Host $http_host;
+  location / {
+    proxy_pass http://mynet-803;
+  }
+}
